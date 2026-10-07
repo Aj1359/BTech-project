@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+algos/__pycache__/
+results/
+results_v1/
