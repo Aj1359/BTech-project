@@ -24,7 +24,8 @@ def main():
         "facebook_combined.txt": "https://snap.stanford.edu/data/facebook_combined.txt.gz",
         "ca-GrQc.txt": "https://snap.stanford.edu/data/ca-GrQc.txt.gz",
         "ca-HepTh.txt": "https://snap.stanford.edu/data/ca-HepTh.txt.gz",
-        "email-Eu-core.txt": "https://snap.stanford.edu/data/email-Eu-core.txt.gz"
+        "email-Eu-core.txt": "https://snap.stanford.edu/data/email-Eu-core.txt.gz",
+        "ca-AstroPh.txt": "https://snap.stanford.edu/data/ca-AstroPh.txt.gz"
     }
     
     for filename, url in datasets.items():

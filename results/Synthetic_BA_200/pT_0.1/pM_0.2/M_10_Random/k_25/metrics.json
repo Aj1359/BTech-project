@@ -1,0 +1,38 @@
+{
+    "group_aware_protect": {
+        "Saved_Fraction": -0.018645049218297682,
+        "Maximin_SP": 0.0,
+        "Consistency": 0.8523662120147378,
+        "Gini": 0.15735727991087087
+    },
+    "myopic_welfare_maximin": {
+        "Saved_Fraction": 0.8213086276780543,
+        "Maximin_SP": 0.62,
+        "Consistency": 0.9090396721007334,
+        "Gini": 0.049422189259021414
+    },
+    "naive_protect": {
+        "Saved_Fraction": 0.7741748697162709,
+        "Maximin_SP": 0.53,
+        "Consistency": 0.8925935313034475,
+        "Gini": 0.06052847661676184
+    },
+    "protect": {
+        "Saved_Fraction": 0.8037058482918356,
+        "Maximin_SP": 0.64,
+        "Consistency": 0.9049143582053873,
+        "Gini": 0.0523952614851199
+    },
+    "random_baseline": {
+        "Saved_Fraction": 0.579038795599305,
+        "Maximin_SP": 0.43999999999999995,
+        "Consistency": 0.8617953912856031,
+        "Gini": 0.08903386027711649
+    },
+    "top_degree": {
+        "Saved_Fraction": 0.8222350897510133,
+        "Maximin_SP": 0.53,
+        "Consistency": 0.9014310291096002,
+        "Gini": 0.053699278255759646
+    }
+}
