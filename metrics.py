@@ -50,7 +50,8 @@ def compute_group_metrics(G, sp_T_dict, sp0_dict, vulnerable):
             t_inf = sum(1.0 - sp_T_dict[v] for v in nodes)
             S_g[g] = 1.0 - (t_inf / base_inf)
         else:
-            S_g[g] = 1.0
+            # Group has no baseline infection risk -> unthreatened, exclude from group gap/ratio
+            pass
             
     if not S_g:
         return 0.0, 1.0, {}
@@ -61,6 +62,29 @@ def compute_group_metrics(G, sp_T_dict, sp0_dict, vulnerable):
     gap = max_S - min_S
     ratio = (min_S / max_S) if max_S > 0 else 1.0
     return float(gap), float(ratio), S_g
+
+def inequality_aversion_welfare(S_g, alpha=0.5):
+    """
+    InequalityAversionWelfare(S_1..S_m, weights w_g, alpha):
+    alpha near 1 favors total spread, alpha near 0 favors fairness.
+    """
+    if not S_g:
+        return 0.0
+    total_val = 0.0
+    for g, sg in S_g.items():
+        val = max(0.0, sg)
+        total_val += (val ** alpha)
+    return float(total_val / float(len(S_g)))
+
+def demographic_parity_gap(S_g):
+    """
+    DemographicParityGap: max_g S_g - min_g S_g on group saved fractions.
+    """
+    if not S_g:
+        return 0.0
+    vals = list(S_g.values())
+    return float(max(vals) - min(vals))
+
 
 def compute_time_weighted_protection(G, M, T, model="ICM", pM=0.1, pT=0.1, R_eval=100, max_steps=20):
     groups_dict = nx.get_node_attributes(G, 'group')
@@ -163,6 +187,10 @@ def compute_all_metrics(G, M, T, model="ICM", pM=0.1, pT=0.1, gamma_T=1.0, c_T=1
     # Time-weighted protection
     time_protection = compute_time_weighted_protection(G, M, T, model=model, pM=pM, pT=pT, R_eval=100)
     
+    # Inequality Aversion & DP Gap
+    ia_welfare = inequality_aversion_welfare(S_g, alpha=0.5)
+    dp_gap = demographic_parity_gap(S_g)
+    
     return {
         "Saved_Fraction": float(saved_fraction),
         "Maximin_SP": float(maximin_sp),
@@ -170,6 +198,8 @@ def compute_all_metrics(G, M, T, model="ICM", pM=0.1, pT=0.1, gamma_T=1.0, c_T=1
         "Consistency": float(consistency),
         "Group_Gap": float(group_gap),
         "Group_Ratio": float(group_ratio),
+        "Inequality_Aversion_Welfare": float(ia_welfare),
+        "DP_Gap": float(dp_gap),
         "Floor_Share": float(floor_share),
         "Corr_Degree": float(corr_deg),
         "Corr_Distance": float(corr_dist),
@@ -178,3 +208,4 @@ def compute_all_metrics(G, M, T, model="ICM", pM=0.1, pT=0.1, gamma_T=1.0, c_T=1
         "Group_Saved_Frac": S_g,
         "Leximin_Sample": leximin_vec[:5]  # lowest 5 values
     }
+
