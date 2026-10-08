@@ -26,10 +26,23 @@ def load_algorithms(algos_dir='algos'):
                 algorithms[name] = module.get_seeds
     return algorithms
 
-def load_real_network(filepath):
-    G = nx.read_edgelist(filepath, create_using=nx.Graph(), data=False)
+def load_real_network(filepath, is_directed=False):
+    create_using = nx.DiGraph() if is_directed else nx.Graph()
+    G = nx.read_edgelist(filepath, create_using=create_using, data=False)
+    
+    # Extract largest connected component / SCC
+    if G.is_directed():
+        components = list(nx.strongly_connected_components(G))
+    else:
+        components = list(nx.connected_components(G))
+        
+    if components:
+        largest_comp = max(components, key=len)
+        G = G.subgraph(largest_comp).copy()
+        
     G = nx.convert_node_labels_to_integers(G)
     return G
+
 
 def preprocess(G, M):
     G_prime = G.copy()
