@@ -1,30 +1,60 @@
 import networkx as nx
+import numpy as np
+
+def compute_fspr_scores(G, nu=0.15):
+    """
+    Computes Fairness-Sensitive PageRank (FSPR) scores as defined in FSPR.pdf.
+    FSPR adjusts the teleportation (jump) vector v such that each demographic group C
+    receives jump probability proportional to target fairness mass phi_C and in-degree.
+    """
+    groups = nx.get_node_attributes(G, 'group')
+    n = G.number_of_nodes()
+    if not groups:
+        groups = {node: 0 for node in G.nodes()}
+        
+    unique_groups = list(set(groups.values()))
+    
+    # Calculate group sizes and target fairness masses phi_C
+    group_sizes = {g: sum(1 for node in G.nodes() if groups[node] == g) for g in unique_groups}
+    phi = {g: group_sizes[g] / float(n) for g in unique_groups}
+    
+    # In-degrees and group in-degree sums D_C
+    in_degrees = dict(G.in_degree() if G.is_directed() else G.degree())
+    D_C = {g: sum(in_degrees[node] for node in G.nodes() if groups[node] == g) for g in unique_groups}
+    
+    # Construct jump vector v according to FSPR.pdf Section II-A
+    v_vec = {}
+    for node in G.nodes():
+        g = groups[node]
+        deg = in_degrees[node]
+        if D_C[g] > 0:
+            v_vec[node] = phi[g] * (deg / float(D_C[g]))
+        else:
+            v_vec[node] = phi[g] / float(max(1, group_sizes[g]))
+            
+    # Normalize jump vector
+    sum_v = sum(v_vec.values())
+    if sum_v > 0:
+        for node in v_vec:
+            v_vec[node] /= sum_v
+    else:
+        v_vec = {node: 1.0 / n for node in G.nodes()}
+        
+    # Standard PageRank with teleportation vector v (alpha = 1 - nu = 0.85)
+    try:
+        scores = nx.pagerank(G, alpha=(1.0 - nu), personalization=v_vec, max_iter=200)
+    except Exception:
+        scores = v_vec
+        
+    return scores
 
 def get_seeds(G, M, budget, **kwargs):
-    groups = nx.get_node_attributes(G, 'group')
-    if not groups:
-        # Fallback if no groups
-        groups = {n: 0 for n in G.nodes()}
-        
-    group_counts = {}
-    for g in groups.values():
-        group_counts[g] = group_counts.get(g, 0) + 1
-        
-    # FSPR biases the random jump vector towards the minority group
-    # Probability of jumping to a node is inversely proportional to its group's size
-    p_vector = {}
-    for n in G.nodes():
-        g = groups[n]
-        p_vector[n] = 1.0 / group_counts[g]
-        
-    # Normalize the personalization vector
-    sum_p = sum(p_vector.values())
-    for n in p_vector:
-        p_vector[n] /= sum_p
-        
-    pr = nx.pagerank(G, personalization=p_vector)
+    """
+    Selects seeds using Fairness-Sensitive PageRank (FSPR).
+    """
+    nu = kwargs.get('nu', 0.15)
+    scores = compute_fspr_scores(G, nu=nu)
     
     candidates = set(G.nodes()) - set(M)
-    sorted_cands = sorted(list(candidates), key=lambda x: pr[x], reverse=True)
-    
+    sorted_cands = sorted(list(candidates), key=lambda x: scores.get(x, 0.0), reverse=True)
     return set(sorted_cands[:budget])
