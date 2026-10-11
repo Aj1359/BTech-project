@@ -1,0 +1,104 @@
+# Configuration for Fair Truth-Spreader Placement Benchmark
+# Real Graphs Only - Follows Thesis Specifications & Extension Rules
+
+networks:
+  - name: Facebook
+    edge_file: networks/facebook_combined.txt
+    group_file: null
+    alpha_override: 0.20
+  - name: Arenas_email
+    edge_file: networks/email-Eu-core.txt
+    group_file: null
+    alpha_override: 0.30
+  - name: CA-AstroPh
+    edge_file: networks/ca-AstroPh.txt
+    group_file: null
+    alpha_override: 0.25
+  - name: CA-GrQc
+    edge_file: networks/ca-GrQc.txt
+    group_file: null
+    alpha_override: null  # auto-calibrate to reach >= 70% outreach
+  - name: CA-HepTh
+    edge_file: networks/ca-HepTh.txt
+    group_file: null
+    alpha_override: null  # auto-calibrate to reach >= 70% outreach
+
+preprocess:
+  largest_connected_component: true
+  undirected_as_bidirectional: true
+
+M:
+  size: 10
+  placements:
+    - highdeg
+    - random
+    - majority
+    - minority
+    - split_prop
+  within_group_rule: random
+  repeats:
+    highdeg: 1
+    random: 5
+    majority: 5
+    minority: 5
+    split_prop: 5
+  min_vulnerable_fraction: 0.10
+  max_redraws: 20
+  seed: 12345
+
+models:
+  COICM:
+    alpha: table_or_calibrated
+  MCICM:
+    mode: high_effectiveness
+    pT: 1.0
+    networks:
+      - Facebook
+      - Arenas_email
+  extra:
+    enabled: false
+    MCICM_grid:
+      pM: [0.1, 0.3, 0.5]
+      pT: [0.1, 0.3, 0.5, 0.7, 1.0]
+    CLT:
+      gamma_T: 1.0
+    WC:
+      c_T: 1.0
+      c_M: 1.0
+
+tie_rule: truth
+delay_r: 0
+budgets: [5, 10, 15, 20, 25]
+
+# Simulation runs
+R_select: 1000
+R_eval: 10000
+epsilon: 0.05
+
+algorithms:
+  # Required algorithms from spec Section 6
+  - random
+  - topdegree
+  - cmia_o
+  - naive_myopic
+  - myopic
+  - protect
+  - naive_protect
+  - fwrrs
+  - pagerank
+  - lfpr
+  - fspr
+  - proposed
+
+  # Fast Heuristics & Centralities (if time/compute allow)
+  - gonzalez
+  - mindegree_hcn
+  - myopic_bfs
+  - myopic_ppr
+  - leastcentral
+  - betweenness
+  - habc_vuln
+  - group_maximin_greedy
+  - dp_aware_fibm
+  - mf_fspr
+  - orf_lfpr
