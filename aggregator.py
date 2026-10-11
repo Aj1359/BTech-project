@@ -16,6 +16,7 @@ def build_master_json(results_dir="results", config_path="config.yaml"):
 
     network_summary_rows = []
 
+    os.makedirs(results_dir, exist_ok=True)
     for net_dir in os.listdir(results_dir):
         net_path = os.path.join(results_dir, net_dir)
         if not os.path.isdir(net_path):
