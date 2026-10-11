@@ -38,10 +38,16 @@ class GraphCSR:
 
 @njit(fastmath=True)
 def _splitmix64(seed):
-    z = (seed + 0x9e3779b97f4a7c15) & 0xFFFFFFFFFFFFFFFF
-    z = ((z ^ (z >> 30)) * 0xbf58476d1ce4e5b9) & 0xFFFFFFFFFFFFFFFF
-    z = ((z ^ (z >> 27)) * 0x94d049bb133111eb) & 0xFFFFFFFFFFFFFFFF
-    return (z ^ (z >> 31)) & 0xFFFFFFFFFFFFFFFF
+    z = (seed + np.uint64(0x9e3779b97f4a7c15))
+    z = (z ^ (z >> np.uint64(30))) * np.uint64(0xbf58476d1ce4e5b9)
+    z = (z ^ (z >> np.uint64(27))) * np.uint64(0x94d049bb133111eb)
+    return z ^ (z >> np.uint64(31))
+
+@njit(fastmath=True)
+def _rng_float(seed):
+    next_s = _splitmix64(seed)
+    val = float((next_s >> np.uint64(40)) & np.uint64(0xFFFFFF)) / 16777216.0
+    return next_s, val
 
 @njit(fastmath=True)
 def _simulate_single_icm(
@@ -71,7 +77,7 @@ def _simulate_single_icm(
 
     step = 0
     max_steps = n + 10
-    rng_state = seed_val
+    rng_state = np.uint64(seed_val)
 
     while (len(frontier_pos) > 0 or len(frontier_neg) > 0 or step < delay_r) and step < max_steps:
         step += 1
@@ -94,8 +100,7 @@ def _simulate_single_icm(
                     prob = pT
                     if is_wc:
                         prob = min(1.0, c_T / max(1, in_degrees[v]))
-                    rng_state = _splitmix64(rng_state)
-                    rand_f = (rng_state >> 40) / 16777216.0
+                    rng_state, rand_f = _rng_float(rng_state)
                     if rand_f < prob:
                         new_pos.append(v)
 
@@ -108,8 +113,7 @@ def _simulate_single_icm(
                     prob = pM
                     if is_wc:
                         prob = min(1.0, c_M / max(1, in_degrees[v]))
-                    rng_state = _splitmix64(rng_state)
-                    rand_f = (rng_state >> 40) / 16777216.0
+                    rng_state, rand_f = _rng_float(rng_state)
                     if rand_f < prob:
                         new_neg.append(v)
 
@@ -130,8 +134,8 @@ def _simulate_single_icm(
                 elif tie_mode == 1:  # misinfo wins
                     frontier_neg.append(v)
                 else:  # coin flip
-                    rng_state = _splitmix64(rng_state)
-                    if (rng_state >> 40) / 16777216.0 < 0.5:
+                    rng_state, coin = _rng_float(rng_state)
+                    if coin < 0.5:
                         frontier_pos.append(v)
                     else:
                         frontier_neg.append(v)
@@ -156,12 +160,13 @@ def _estimate_sp_numba(
     R_runs, base_seed
 ):
     n = len(row_ptr) - 1
-    inf_counts = np.zeros(n, dtype=np.int32)
+    # Thread-safe matrix: each run writes exclusively to row r
+    inf_matrix = np.zeros((R_runs, n), dtype=np.int8)
 
     for r in prange(R_runs):
         state = np.zeros(n, dtype=np.int8)
         time_step = np.zeros(n, dtype=np.int16)
-        run_seed = base_seed + r * 1000003
+        run_seed = np.uint64(base_seed) + np.uint64(r) * np.uint64(1000003)
 
         _simulate_single_icm(
             row_ptr, col_indices, in_degrees,
@@ -173,12 +178,22 @@ def _estimate_sp_numba(
 
         for v in range(n):
             if state[v] == -1:
-                inf_counts[v] += 1
+                inf_matrix[r, v] = 1
 
     sp = np.zeros(n, dtype=np.float32)
     for v in range(n):
-        sp[v] = 1.0 - (float(inf_counts[v]) / float(R_runs))
+        cnt = 0
+        for r in range(R_runs):
+            cnt += inf_matrix[r, v]
+        val = 1.0 - (float(cnt) / float(R_runs))
+        if val < 0.0:
+            val = 0.0
+        elif val > 1.0:
+            val = 1.0
+        sp[v] = val
     return sp
+
+
 
 def compute_distances_bfs(G, M_seeds):
     """
@@ -191,8 +206,6 @@ def compute_distances_bfs(G, M_seeds):
             for u in list(G_prime.predecessors(m)):
                 G_prime.remove_edge(u, m)
     else:
-        # In undirected graph treated as bidirectional, incoming edges to M are removed
-        # meaning edges entering M are removed, so M can only act as source
         G_prime = nx.DiGraph(G_prime)
         for m in M_seeds:
             for u in list(G_prime.predecessors(m)):
@@ -209,10 +222,30 @@ def compute_distances_bfs(G, M_seeds):
     return D, D_M
 
 def estimate_sp_engine(
-    csr_graph, M_seeds, T_seeds,
+    graph_or_csr, M_seeds, T_seeds,
     model_type="COICM", pM=0.1, pT=0.1, gamma_T=1.0, c_T=1.0, c_M=1.0,
-    tie_rule="truth", delay_r=0, R_runs=1000, base_seed=12345
+    tie_rule="truth", delay_r=0, R_runs=1000, base_seed=12345, *args, **kwargs
 ):
+    # Support both GraphCSR and networkx.Graph
+    if isinstance(graph_or_csr, GraphCSR):
+        csr_graph = graph_or_csr
+    elif hasattr(graph_or_csr, '_csr_cache'):
+        csr_graph = graph_or_csr._csr_cache
+    else:
+        csr_graph = GraphCSR(graph_or_csr)
+
+    # Handle positional args if passed by older thesis signatures: (G, M, T, pM, pT, R)
+    if len(args) >= 1:
+        pM = args[0]
+    if len(args) >= 2:
+        pT = args[1]
+    if len(args) >= 3:
+        R_runs = args[2]
+
+    # Keyword overrides
+    if 'R' in kwargs:
+        R_runs = kwargs['R']
+
     tie_mode = 0 if tie_rule == "truth" else (1 if tie_rule == "misinfo" else 2)
     is_wc = (model_type in ["WeightedCascade", "WC"])
     m_arr = np.array(list(M_seeds), dtype=np.int32)
@@ -310,7 +343,7 @@ def evaluate_metrics_engine(
         group_gap = 0.0
         group_ratio = 1.0
 
-    # Speed metric (approximate from activation step)
+    # Speed metric
     speed_overall = float(saved_fraction)
     speed_min_over_groups = float(min(active_S) if active_S else 1.0)
 
