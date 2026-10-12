@@ -1,14 +1,22 @@
-import math
-import numpy as np
-import networkx as nx
-from collections import deque
-from numba import njit, prange
+try:
+    from numba import njit, prange
+    HAS_NUMBA = True
+except Exception:
+    HAS_NUMBA = False
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        if len(args) == 1 and callable(args[0]):
+            return args[0]
+        return decorator
+    prange = range
 
 try:
     import fair_spread_cpp
     HAS_CPP = True
 except ImportError:
     HAS_CPP = False
+
 
 class GraphCSR:
     def __init__(self, G):
