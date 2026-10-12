@@ -1,3 +1,8 @@
+import math
+import numpy as np
+import networkx as nx
+from collections import deque
+
 try:
     from numba import njit, prange
     HAS_NUMBA = True
@@ -10,6 +15,7 @@ except Exception:
             return args[0]
         return decorator
     prange = range
+
 
 try:
     import fair_spread_cpp
