@@ -43,6 +43,7 @@ def assign_communities(G, seed=42):
     Assigns community group labels using Louvain modularity detection.
     """
     try:
+        # pyrefly: ignore [missing-import]
         import community as community_louvain
         partition = community_louvain.best_partition(G, random_state=seed)
     except Exception:
