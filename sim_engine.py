@@ -50,11 +50,16 @@ class GraphCSR:
         self.in_degrees = np.array(in_degrees, dtype=np.int32)
         self.out_degrees = np.array(out_degrees, dtype=np.int32)
 
+_MASK64 = np.uint64(0xFFFFFFFFFFFFFFFF)
+_SM_C1  = np.uint64(0x9e3779b97f4a7c15)
+_SM_C2  = np.uint64(0xbf58476d1ce4e5b9)
+_SM_C3  = np.uint64(0x94d049bb133111eb)
+
 @njit(fastmath=True)
 def _splitmix64(seed):
-    z = (seed + np.uint64(0x9e3779b97f4a7c15))
-    z = (z ^ (z >> np.uint64(30))) * np.uint64(0xbf58476d1ce4e5b9)
-    z = (z ^ (z >> np.uint64(27))) * np.uint64(0x94d049bb133111eb)
+    z = (seed + _SM_C1) & _MASK64
+    z = ((z ^ (z >> np.uint64(30))) * _SM_C2) & _MASK64
+    z = ((z ^ (z >> np.uint64(27))) * _SM_C3) & _MASK64
     return z ^ (z >> np.uint64(31))
 
 @njit(fastmath=True)
