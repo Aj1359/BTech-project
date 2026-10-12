@@ -326,13 +326,18 @@ def evaluate_metrics_engine(
     exp_inf_T = sum(1.0 - sp_T[v] for v in vuln_list)
     saved_fraction = 1.0 - (exp_inf_T / exp_inf_0) if exp_inf_0 > 0 else 1.0
 
-    # Outreach
-    outreach = float(np.mean([1.0 - sp_T[v] for v in range(n)]))
+    # Outreach (fraction of vulnerable nodes infected by misinformation, excluding M)
+    outreach = float(np.mean([1.0 - sp_T[v] for v in vuln_list]))
 
-    # Percentiles & Histogram
+    # Percentiles, Tail Metrics & Histogram
     sorted_sp = sorted(sp_vuln)
-    sp_p01 = sorted_sp[max(0, int(0.01 * len(sorted_sp)))]
-    sp_median = sorted_sp[len(sorted_sp) // 2]
+    n_vuln = len(sorted_sp)
+    sp_p01 = sorted_sp[max(0, int(0.01 * n_vuln))]
+    sp_p05 = sorted_sp[max(0, int(0.05 * n_vuln))]
+    idx_5pct = max(1, int(0.05 * n_vuln))
+    mean_bottom_5pct = float(np.mean(sorted_sp[:idx_5pct]))
+    frac_sp_below_005 = float(sum(1 for x in sorted_sp if x < 0.05) / n_vuln)
+    sp_median = sorted_sp[n_vuln // 2]
     hist20, _ = np.histogram(sp_vuln, bins=20, range=(0.0, 1.0))
 
     # Gini
@@ -396,6 +401,9 @@ def evaluate_metrics_engine(
         "group_ratio": float(group_ratio),
         "outreach": float(outreach),
         "sp_p01": float(sp_p01),
+        "sp_p05": float(sp_p05),
+        "mean_bottom_5pct": float(mean_bottom_5pct),
+        "frac_sp_below_005": float(frac_sp_below_005),
         "sp_median": float(sp_median),
         "sp_hist20": [int(x) for x in hist20]
     }

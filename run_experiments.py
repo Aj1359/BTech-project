@@ -173,11 +173,25 @@ def run_experiment_pipeline(
             if not vuln_nodes:
                 vuln_nodes = [v for v in range(G.number_of_nodes()) if v not in M_seeds]
 
-            baseline_outreach = float(np.mean([1.0 - sp0[v] for v in range(G.number_of_nodes())]))
-            print(f"    Baseline T=empty: Vulnerable nodes = {len(vuln_nodes)}, Outreach = {baseline_outreach*100:.2f}%")
+            # Outreach strictly over vulnerable nodes (excluding M)
+            baseline_outreach = float(np.mean([1.0 - sp0[v] for v in vuln_nodes]))
+            sp0_vuln = [float(sp0[v]) for v in vuln_nodes]
+            baseline_min_sp = min(sp0_vuln)
+            baseline_zeros = sum(1 for x in sp0_vuln if x == 0.0)
+            baseline_near_one = sum(1 for x in sp0_vuln if x < 0.001)  # inf_prob >= 0.999
+            sorted_sp0 = sorted(sp0_vuln)
+            sp0_p01 = sorted_sp0[max(0, int(0.01 * len(sorted_sp0)))]
+            sp0_p05 = sorted_sp0[max(0, int(0.05 * len(sorted_sp0)))]
+
+            print(f"    Baseline T=empty:")
+            print(f"       Vulnerable nodes = {len(vuln_nodes)} (out of {G.number_of_nodes()})")
+            print(f"       Outreach = {baseline_outreach*100:.2f}% | Avg SP = {np.mean(sp0_vuln):.4f} | Min SP = {baseline_min_sp:.4f}")
+            print(f"       Nodes with SP=0: {baseline_zeros} | Nodes with SP<0.001 (inf>99.9%): {baseline_near_one}")
+            print(f"       Tail SP: p01 = {sp0_p01:.4f} | p05 = {sp0_p05:.4f}")
 
             # Metrics collectors for plotting vs k
             sp_vs_k = defaultdict(dict)
+            p05_vs_k = defaultdict(dict)
             saved_frac_vs_k = defaultdict(dict)
 
             max_k = max(budgets)
@@ -235,16 +249,18 @@ def run_experiment_pipeline(
                         k_metrics[algo_id] = metrics
 
                         sp_vs_k[algo_id][k] = metrics["maximin_sp"]
+                        p05_vs_k[algo_id][k] = metrics["sp_p05"]
                         saved_frac_vs_k[algo_id][k] = metrics["saved_fraction"]
 
                         # ── Per-iteration live progress ──────────────────────
                         print(
-                            f"         [{algo_id:25s}] k={k:2d} | "
-                            f"minSP={metrics['maximin_sp']:.4f}  "
-                            f"saved={metrics['saved_fraction']*100:5.1f}%  "
-                            f"avgSP={metrics['avg_sp']:.4f}  "
-                            f"gini={metrics['gini']:.4f}  "
-                            f"grp_gap={metrics['group_gap']:.4f}  "
+                            f"         [{algo_id:23s}] k={k:2d} | "
+                            f"minSP={metrics['maximin_sp']:.4f} "
+                            f"p01={metrics['sp_p01']:.4f} "
+                            f"p05={metrics['sp_p05']:.4f} "
+                            f"b5%={metrics['mean_bottom_5pct']:.4f} | "
+                            f"saved={metrics['saved_fraction']*100:4.1f}% "
+                            f"avgSP={metrics['avg_sp']:.4f} "
                             f"rt={metrics['runtime_select_s']:.2f}s"
                         )
 
@@ -263,6 +279,12 @@ def run_experiment_pipeline(
                 budgets, sp_vs_k, "Maximin_SP",
                 f"Maximin SP vs Budget (k) | {net_name} | {model_family} ({prob_folder_name})",
                 os.path.join(prob_dir, "maximin_sp_vs_k.png")
+            )
+
+            plot_metric_vs_k(
+                budgets, p05_vs_k, "SP_P05 (5th Percentile)",
+                f"Tail SP (5th Percentile) vs Budget (k) | {net_name} | {model_family} ({prob_folder_name})",
+                os.path.join(prob_dir, "sp_p05_vs_k.png")
             )
 
             plot_metric_vs_k(
