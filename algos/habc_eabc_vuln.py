@@ -6,8 +6,8 @@ def get_seeds(G, M, budget, **kwargs):
     pT = kwargs.get('pT', 0.1)
     model = kwargs.get('model', 'ICM')
     
-    sp0 = estimate_sp(G, M, set(), model=model, pM=pM, pT=pT, R=50)
-    w = {v: 1.0 - sp0.get(v, 1.0) for v in G.nodes()}
+    sp0 = estimate_sp(G, M, set(), model_type=model, pM=pM, pT=pT, R_runs=50)
+    w = {v: 1.0 - float(sp0[v]) for v in G.nodes()}
     for m in M:
         w[m] = 0.0
         

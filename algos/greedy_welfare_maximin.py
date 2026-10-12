@@ -20,7 +20,7 @@ def get_seeds(G, M, budget, **kwargs):
         for c in candidates:
             temp_T = T | {c}
             sp = estimate_sp(G, M, temp_T, model=model, pM=pM, pT=pT, R=R)
-            sp_vuln = [sp[v] for v in vulnerable if v in sp]
+            sp_vuln = [float(sp[v]) for v in vulnerable]
             
             if sp_vuln:
                 m_sp = min(sp_vuln)

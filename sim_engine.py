@@ -279,6 +279,8 @@ def estimate_sp_engine(
     # Keyword overrides
     if 'R' in kwargs:
         R_runs = kwargs['R']
+    if 'model' in kwargs:
+        model_type = kwargs['model']  # alias: model= accepted alongside model_type=
 
     tie_mode = 0 if tie_rule == "truth" else (1 if tie_rule == "misinfo" else 2)
     is_wc = (model_type in ["WeightedCascade", "WC"])
