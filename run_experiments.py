@@ -237,6 +237,17 @@ def run_experiment_pipeline(
                         sp_vs_k[algo_id][k] = metrics["maximin_sp"]
                         saved_frac_vs_k[algo_id][k] = metrics["saved_fraction"]
 
+                        # ── Per-iteration live progress ──────────────────────
+                        print(
+                            f"         [{algo_id:25s}] k={k:2d} | "
+                            f"minSP={metrics['maximin_sp']:.4f}  "
+                            f"saved={metrics['saved_fraction']*100:5.1f}%  "
+                            f"avgSP={metrics['avg_sp']:.4f}  "
+                            f"gini={metrics['gini']:.4f}  "
+                            f"grp_gap={metrics['group_gap']:.4f}  "
+                            f"rt={metrics['runtime_select_s']:.2f}s"
+                        )
+
                     except Exception as e:
                         print(f"         [Error] {algo_id} at k={k}: {e}")
 
