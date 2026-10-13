@@ -268,7 +268,17 @@ def estimate_sp_engine(
     else:
         csr_graph = GraphCSR(graph_or_csr)
 
-    # Handle positional args if passed by older thesis signatures: (G, M, T, pM, pT, R)
+    # Detect legacy positional call: estimate_sp(G, M, T, pM, pT, R)
+    if isinstance(model_type, (int, float)):
+        actual_pM = float(model_type)
+        actual_pT = float(pM)
+        actual_R = int(pT) if pT > 1.0 else (int(kwargs['R']) if 'R' in kwargs else 1000)
+        pM = actual_pM
+        pT = actual_pT
+        R_runs = actual_R
+        model_type = kwargs.get('model', kwargs.get('model_type', 'COICM'))
+
+    # Handle extra positional args if passed: (G, M, T, model_type, pM, pT, R)
     if len(args) >= 1:
         pM = args[0]
     if len(args) >= 2:
@@ -280,8 +290,16 @@ def estimate_sp_engine(
     if 'R' in kwargs:
         R_runs = kwargs['R']
     if 'model' in kwargs:
-        model_type = kwargs['model']  # alias: model= accepted alongside model_type=
+        model_type = kwargs['model']
+    if 'model_type' in kwargs:
+        model_type = kwargs['model_type']
+    if 'pM' in kwargs:
+        pM = kwargs['pM']
+    if 'pT' in kwargs:
+        pT = kwargs['pT']
 
+    assert float(pM) <= 1.0, f"Error: pM must be <= 1.0, got {pM}"
+    assert float(pT) <= 1.0, f"Error: pT must be <= 1.0, got {pT}"
     tie_mode = 0 if tie_rule == "truth" else (1 if tie_rule == "misinfo" else 2)
     is_wc = (model_type in ["WeightedCascade", "WC"])
     m_arr = np.array(list(M_seeds), dtype=np.int32)
@@ -361,17 +379,21 @@ def evaluate_metrics_engine(
             den_cons += s_ij
     consistency = float(1.0 - (num_cons / den_cons)) if den_cons > 0 else 1.0
 
-    # Group saved fractions & gap/ratio
+    # Group saved fractions & gap/ratio (filtering out tiny community shards < 1% of vulnerable nodes)
     unique_groups = sorted(list(set(group_labels.values())))
     group_saved = {}
     active_S = []
+    min_group_size = max(10, int(0.01 * len(vuln_list)))
 
     for g in unique_groups:
         g_vuln = [v for v in vuln_list if group_labels.get(v, 0) == g]
+        if len(g_vuln) < min_group_size:
+            continue  # Ignore tiny artifact communities that induce numerical variance
+
         base_inf = sum(1.0 - sp0[v] for v in g_vuln)
         if base_inf > 0:
             t_inf = sum(1.0 - sp_T[v] for v in g_vuln)
-            s_g = 1.0 - (t_inf / base_inf)
+            s_g = max(0.0, min(1.0, 1.0 - (t_inf / base_inf)))  # Clamped to valid [0, 1]
             group_saved[str(g)] = float(s_g)
             active_S.append(s_g)
         else:

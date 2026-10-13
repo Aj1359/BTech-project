@@ -15,4 +15,4 @@ def get_seeds(G, M, budget, **kwargs):
         pr = dict(G.in_degree() if G.is_directed() else G.degree())
         
     sorted_cands = sorted(list(candidates), key=lambda x: pr.get(x, 0.0), reverse=True)
-    return set(sorted_cands[:budget])
+    return list(sorted_cands[:budget])

@@ -10,4 +10,4 @@ def get_seeds(G, M, budget, **kwargs):
     # sp0 is a numpy array indexed by integer node id
     candidates = [v for v in G.nodes() if v not in M]
     sorted_cand = sorted(candidates, key=lambda v: float(sp0[v]))
-    return set(sorted_cand[:budget])
+    return list(sorted_cand[:budget])

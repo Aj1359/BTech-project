@@ -23,16 +23,19 @@ def get_seeds(G, M, budget, **kwargs):
         b_inf = sum(1.0 - sp0[v] for v in group_vuln[g])
         base_inf[g] = b_inf if b_inf > 0 else 1.0
         
-    T = set()
-    candidates = list(set(G.nodes()) - set(M))
-    
+    T = []
+    all_candidates = list(set(G.nodes()) - set(M))
+    # Pre-filter candidate pool to top candidates by degree/proximity for tractable greedy simulation
+    degrees = dict(G.degree(all_candidates))
+    candidates = sorted(all_candidates, key=degrees.get, reverse=True)[:min(150, len(all_candidates))]
+
     for _ in range(budget):
         scores = {}
         for c in candidates:
             if c in T: continue
-            temp_T = T | {c}
-            sp = estimate_sp(G, M, temp_T, model=model, pM=pM, pT=pT, R=R)
-            
+            temp_T = set(T) | {c}
+            sp = estimate_sp(G, M, temp_T, model_type=model, pM=pM, pT=pT, R_runs=R)
+
             S_g = {}
             for g in groups:
                 if not group_vuln[g]:
@@ -40,14 +43,14 @@ def get_seeds(G, M, budget, **kwargs):
                 else:
                     curr_inf = sum(1.0 - sp[v] for v in group_vuln[g])
                     S_g[g] = 1.0 - (curr_inf / base_inf[g])
-                    
+
             scores[c] = min(S_g.values())
-            
+
         if not scores:
             break
-            
+
         best_cand = max(scores, key=scores.get)
-        T.add(best_cand)
+        T.append(best_cand)
         candidates.remove(best_cand)
-        
+
     return T

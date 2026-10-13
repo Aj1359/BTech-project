@@ -29,24 +29,26 @@ def get_seeds(G, M, budget, **kwargs):
         b_inf = sum(1.0 - sp0[v] for v in g_vuln)
         base_inf_g[g] = b_inf if b_inf > 0 else 1.0
         
-    T = set()
-    candidates = set(G.nodes()) - set(M)
-    
+    T = []
+    all_candidates = list(set(G.nodes()) - set(M))
+    degrees = dict(G.degree(all_candidates))
+    candidates = set(sorted(all_candidates, key=degrees.get, reverse=True)[:min(150, len(all_candidates))])
+
     for _ in range(budget):
         if not candidates:
             break
-            
+
         best_cand = None
         best_obj = -float('inf')
-        
+
         for c in candidates:
-            temp_T = T | {c}
-            sp = estimate_sp(G, M, temp_T, model=model, pM=pM, pT=pT, R=R)
-            
+            temp_T = set(T) | {c}
+            sp = estimate_sp(G, M, temp_T, model_type=model, pM=pM, pT=pT, R_runs=R)
+
             # Effectiveness: total expected saved nodes
             exp_inf = sum(1.0 - sp[v] for v in vulnerable)
             effectiveness = sum(1.0 - sp0[v] for v in vulnerable) - exp_inf
-            
+
             # DP Fairness: 1.0 - group gap in relative saved fraction
             S_g = {}
             for g in groups:
@@ -56,19 +58,19 @@ def get_seeds(G, M, budget, **kwargs):
                 else:
                     curr_inf = sum(1.0 - sp[v] for v in g_vuln)
                     S_g[g] = 1.0 - (curr_inf / base_inf_g[g])
-                    
+
             gap = max(S_g.values()) - min(S_g.values()) if S_g else 0.0
             dp_fair = 1.0 - gap
-            
+
             obj = (effectiveness / total_vuln) + lam * dp_fair
             if obj > best_obj:
                 best_obj = obj
                 best_cand = c
-                
+
         if best_cand is None:
             best_cand = random.choice(list(candidates))
-            
-        T.add(best_cand)
+
+        T.append(best_cand)
         candidates.remove(best_cand)
-        
+
     return T

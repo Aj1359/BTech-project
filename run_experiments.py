@@ -330,8 +330,8 @@ def run_experiment_pipeline(
 
                             sel_runtime = time.time() - start_time
 
-                            # Independent Evaluation Run (R_sim runs)
-                            eval_seed = (int(pM_val * 1000) + k * 101 + 54321) & 0xFFFFFFFF
+                            # Paired Evaluation Run (Common Random Numbers with baseline sp0)
+                            eval_seed = 12345
                             metrics = evaluate_metrics_engine(
                                 G, csr_graph, M_seeds, T, groups,
                                 sp0, vuln_nodes,

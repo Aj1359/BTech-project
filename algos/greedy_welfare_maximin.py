@@ -10,18 +10,18 @@ def get_seeds(G, M, budget, **kwargs):
     
     vulnerable = list(vulnerable_set)
     candidates = list(set(G.nodes()) - set(M))
-    T = set()
-    
+    T = []
+
     for _ in range(budget):
         min_sp = {}
         avg_sp = {}
         min_cnt = {}
-        
+
         for c in candidates:
-            temp_T = T | {c}
-            sp = estimate_sp(G, M, temp_T, model=model, pM=pM, pT=pT, R=R)
+            temp_T = set(T) | {c}
+            sp = estimate_sp(G, M, temp_T, model_type=model, pM=pM, pT=pT, R_runs=R)
             sp_vuln = [float(sp[v]) for v in vulnerable]
-            
+
             if sp_vuln:
                 m_sp = min(sp_vuln)
                 min_sp[c] = m_sp
@@ -31,23 +31,23 @@ def get_seeds(G, M, budget, **kwargs):
                 min_sp[c] = 1.0
                 avg_sp[c] = 1.0
                 min_cnt[c] = 0
-                
+
         if not min_sp:
             break
-            
+
         best = max(min_sp.values())
         cand = [c for c in candidates if min_sp[c] == best]
-        
+
         if len(cand) > 1:
             min_c_val = min(min_cnt[c] for c in cand)
             cand = [c for c in cand if min_cnt[c] == min_c_val]
-            
+
         if len(cand) > 1:
             max_avg = max(avg_sp[c] for c in cand)
             cand = [c for c in cand if avg_sp[c] == max_avg]
-            
+
         t = cand[0] if cand else random.choice(candidates)
-        T.add(t)
+        T.append(t)
         candidates.remove(t)
-        
+
     return T

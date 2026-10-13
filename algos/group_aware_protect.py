@@ -13,20 +13,21 @@ def get_seeds(G, M, budget, **kwargs):
     vulnerable_set = kwargs.get('vulnerable_set')
     groups = kwargs.get('groups')
     
+    model = kwargs.get('model', 'COICM')
     Vg = {g: vulnerable_set.intersection({n for n in G.nodes() if G.nodes[n].get('group') == g}) for g in groups}
-    
-    sp0 = estimate_sp(G, M, set(), pM, pT, R)
+
+    sp0 = estimate_sp(G, M, set(), model_type=model, pM=pM, pT=pT, R_runs=R)
     base_infected = {}
     for g in groups:
         base_inf = sum(1.0 - sp0[v] for v in Vg[g])
         base_infected[g] = base_inf if base_inf > 0 else 1.0
-        
+
     D_T = {v: float('inf') for v in G.nodes()}
-    T = set()
+    T = []
     candidates = set(G.nodes()) - set(M)
-    
+
     for _ in range(budget):
-        sp = estimate_sp(G, M, T, pM, pT, R)
+        sp = estimate_sp(G, M, set(T), model_type=model, pM=pM, pT=pT, R_runs=R)
         
         saved = {}
         for g in groups:
@@ -78,7 +79,7 @@ def get_seeds(G, M, budget, **kwargs):
             options = [c for c, val in scores.items() if val == min_score]
             
         t = options[0] if options else random.choice(list(candidates))
-        T.add(t)
+        T.append(t)
         candidates.discard(t)
         for v in G.nodes():
             D_T[v] = min(D.get(t, {}).get(v, float('inf')), D_T.get(v, float('inf')))

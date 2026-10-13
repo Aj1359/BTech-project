@@ -132,5 +132,33 @@ class TestValidationSuite(unittest.TestCase):
         corr, _ = pearsonr(vec_exact, vec_mf)
         self.assertTrue(corr > 0.85)
 
+    def test_10_bug_fixes_verification(self):
+        """Test 10: Regression test for Bug 1 and Bug 2."""
+        # 1. Bug 2 check: positional call (G, M, T, 0.3, 0.3, 500) must bind correctly
+        sp = estimate_sp_engine(self.csr_path, {0}, {2}, 0.3, 0.3, 500)
+        self.assertTrue(np.all(sp >= 0.0))
+        self.assertTrue(np.all(sp <= 1.0))
+
+        # 2. Bug 1 check: on an Erdős–Rényi random graph, topdegree and pagerank seeds at k=2 must be EXACT prefix of k=5
+        G_rnd = nx.erdos_renyi_graph(30, 0.25, seed=123)
+        M = {0, 1}
+        for algo in ['topdegree', 'pagerank', 'protect', 'myopic']:
+            D, D_M = compute_distances_bfs(G_rnd, M)
+            seeds_5 = self.algo_mgr.run_algo(
+                algo, G_rnd, M, 5, {'pM': 0.2, 'pT': 0.2},
+                D=D, D_M=D_M, vulnerable_set=set(G_rnd.nodes()) - M,
+                groups=[0], estimate_sp=estimate_sp_engine
+            )
+            seeds_2 = self.algo_mgr.run_algo(
+                algo, G_rnd, M, 2, {'pM': 0.2, 'pT': 0.2},
+                D=D, D_M=D_M, vulnerable_set=set(G_rnd.nodes()) - M,
+                groups=[0], estimate_sp=estimate_sp_engine
+            )
+            # Seeds must be an ordered list
+            self.assertIsInstance(seeds_5, list)
+            self.assertIsInstance(seeds_2, list)
+            # Exact prefix match
+            self.assertEqual(seeds_5[:2], seeds_2, f"Prefix mismatch in {algo}!")
+
 if __name__ == '__main__':
     unittest.main()

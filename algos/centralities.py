@@ -17,4 +17,4 @@ def get_seeds(G, M, budget, **kwargs):
         scores = dict(G.degree())
         
     sorted_cand = sorted(candidates, key=lambda v: scores.get(v, 0), reverse=True)
-    return set(sorted_cand[:budget])
+    return list(sorted_cand[:budget])

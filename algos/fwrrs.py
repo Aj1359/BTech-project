@@ -23,7 +23,7 @@ def get_seeds(G, M, budget, **kwargs):
     }
     
     candidates = set(G.nodes()) - set(M)
-    T = set()
+    T = []
     
     # Pre-calculate candidate protection power per vulnerable node
     # Candidate c protects v if dist(c, v) <= dist(M, v)
@@ -79,7 +79,7 @@ def get_seeds(G, M, budget, **kwargs):
         if best_cand is None:
             best_cand = random.choice(list(candidates))
             
-        T.add(best_cand)
+        T.append(best_cand)
         candidates.remove(best_cand)
         
         # Update protected sets per group

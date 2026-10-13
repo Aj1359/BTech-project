@@ -5,4 +5,4 @@ def get_seeds(G, M, budget, **kwargs):
     candidates = list(vulnerable_set - set(M))
     degrees = dict(G.degree(candidates))
     sorted_candidates = sorted(degrees, key=degrees.get, reverse=True)
-    return set(sorted_candidates[:budget])
+    return list(sorted_candidates[:budget])

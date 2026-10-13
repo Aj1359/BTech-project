@@ -38,10 +38,13 @@ MODEL_AGNOSTIC_ALGOS = {
 }
 
 # Algorithms where prefix-reuse is strictly valid (seeds for k < k_max are prefix of k_max)
+# Making greedy/ranking algorithms prefix-reusable enforces nested seeds and avoids redundant computation
 PREFIX_REUSABLE_ALGOS = {
     'myopic', 'protect', 'greedy_maximin', 'naive_myopic',
     'gonzalez', 'pagerank', 'lfpr', 'fspr', 'mf_fspr', 'orf_lfpr',
-    'topdegree', 'betweenness', 'leastcentral'
+    'topdegree', 'betweenness', 'leastcentral', 'naive_protect',
+    'habc_vuln', 'random', 'proposed', 'fwrrs',
+    'group_maximin_greedy', 'dp_aware_fibm', 'mindegree_hcn', 'myopic_bfs'
 }
 
 class AlgoManager:
@@ -96,8 +99,11 @@ class AlgoManager:
             kwargs['measure'] = 'betweenness'
 
         seeds = func(G, M, k, **kwargs)
-        # Ensure T is a list of nodes excluding M
-        seed_list = [v for v in seeds if v not in M]
+        # Ensure T is a list strictly preserving selection order, excluding M and duplicates
+        seed_list = []
+        for v in seeds:
+            if v not in M and v not in seed_list:
+                seed_list.append(v)
         if len(seed_list) > k:
             seed_list = seed_list[:k]
         return seed_list

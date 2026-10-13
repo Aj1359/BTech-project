@@ -60,4 +60,4 @@ def get_seeds(G, M, budget, **kwargs):
     
     candidates = set(G.nodes()) - set(M)
     sorted_cands = sorted(list(candidates), key=lambda x: scores.get(x, 0.0), reverse=True)
-    return set(sorted_cands[:budget])
+    return list(sorted_cands[:budget])
