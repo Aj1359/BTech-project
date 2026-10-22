@@ -28,7 +28,9 @@ ALGO_FILES = {
     'dp_aware_fibm': 'dp_aware_fibm.py',
     'mf_fspr': 'mf_fspr.py',
     'orf_lfpr': 'orf_lfpr.py',
-    'ftrw': 'ftrw.py'
+    'ftrw': 'ftrw.py',
+    'ftrw_v2': 'ftrw_v2.py',
+    'ftrw_v3': 'ftrw_v3.py'
 }
 
 # Algorithms whose seed selection is completely model-agnostic (independent of pM, pT)
@@ -46,7 +48,7 @@ PREFIX_REUSABLE_ALGOS = {
     'topdegree', 'betweenness', 'leastcentral', 'naive_protect',
     'habc_vuln', 'random', 'proposed', 'fwrrs',
     'group_maximin_greedy', 'dp_aware_fibm', 'mindegree_hcn', 'myopic_bfs',
-    'ftrw'
+    'ftrw', 'ftrw_v2', 'ftrw_v3'
 }
 
 class AlgoManager:
