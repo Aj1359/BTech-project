@@ -320,7 +320,11 @@ def run_experiment_pipeline(
                                     {'pM': pM_val, 'pT': pT_val, 'model': model_family},
                                     R_select=R_sim, rng_seed=42 + k,
                                     D=D, D_M=D_M, vulnerable_set=set(vuln_nodes),
-                                    groups=unique_groups, estimate_sp=estimate_sp_engine
+                                    groups=unique_groups, estimate_sp=estimate_sp_engine,
+                                    csr=csr_graph,
+                                    L=25, R_cand=150, R_base=500, p_frac=0.20, theta=None,
+                                    phi_jump=0.80, phi_walk=0.70, eta=0.7, tau=2.0,
+                                    eps=0.05, gamma=0.15, tail_frac=0.05
                                 )
                                 if algo_id in PREFIX_REUSABLE_ALGOS:
                                     prefix_cache[algo_id] = T_full

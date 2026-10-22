@@ -27,7 +27,8 @@ ALGO_FILES = {
     'group_maximin_greedy': 'group_maximin_greedy.py',
     'dp_aware_fibm': 'dp_aware_fibm.py',
     'mf_fspr': 'mf_fspr.py',
-    'orf_lfpr': 'orf_lfpr.py'
+    'orf_lfpr': 'orf_lfpr.py',
+    'ftrw': 'ftrw.py'
 }
 
 # Algorithms whose seed selection is completely model-agnostic (independent of pM, pT)
@@ -44,7 +45,8 @@ PREFIX_REUSABLE_ALGOS = {
     'gonzalez', 'pagerank', 'lfpr', 'fspr', 'mf_fspr', 'orf_lfpr',
     'topdegree', 'betweenness', 'leastcentral', 'naive_protect',
     'habc_vuln', 'random', 'proposed', 'fwrrs',
-    'group_maximin_greedy', 'dp_aware_fibm', 'mindegree_hcn', 'myopic_bfs'
+    'group_maximin_greedy', 'dp_aware_fibm', 'mindegree_hcn', 'myopic_bfs',
+    'ftrw'
 }
 
 class AlgoManager:
