@@ -160,5 +160,34 @@ class TestValidationSuite(unittest.TestCase):
             # Exact prefix match
             self.assertEqual(seeds_5[:2], seeds_2, f"Prefix mismatch in {algo}!")
 
+    def test_11_ftrw_family_execution_and_prefixes(self):
+        """Test 11: Validate FTRW family (ftrw, ftrw_v2, ftrw_v3) seed validity and prefix reusability."""
+        M = {0}
+        D, D_M = compute_distances_bfs(self.G_path, M)
+        sp0 = estimate_sp_engine(self.csr_path, M, set(), "COICM", pM=0.3, pT=0.3, R_runs=200, base_seed=42)
+        vuln = set(v for v in range(8) if v not in M and sp0[v] < 1.0)
+
+        for algo_name in ['ftrw', 'ftrw_v2', 'ftrw_v3']:
+            seeds_3 = self.algo_mgr.run_algo(
+                algo_name, self.G_path, M, 3, {'pM': 0.3, 'pT': 0.3, 'model': 'COICM'},
+                D=D, D_M=D_M, vulnerable_set=vuln,
+                estimate_sp=estimate_sp_engine, csr=self.csr_path,
+                R_cand=30, R_base=60, L=5
+            )
+            seeds_2 = self.algo_mgr.run_algo(
+                algo_name, self.G_path, M, 2, {'pM': 0.3, 'pT': 0.3, 'model': 'COICM'},
+                D=D, D_M=D_M, vulnerable_set=vuln,
+                estimate_sp=estimate_sp_engine, csr=self.csr_path,
+                R_cand=30, R_base=60, L=5
+            )
+
+            # Seeds must be an ordered list
+            self.assertIsInstance(seeds_3, list)
+            self.assertEqual(len(seeds_3), 3)
+            # Seeds must not overlap with M
+            self.assertTrue(all(s not in M for s in seeds_3))
+            # Prefix reusability check
+            self.assertEqual(seeds_3[:2], seeds_2, f"Prefix mismatch in {algo_name}!")
+
 if __name__ == '__main__':
     unittest.main()
