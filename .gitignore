@@ -4,3 +4,6 @@ algos/__pycache__/
 results/
 results_v1/
 results_v3/
+*.zip
+.vscode/
+.idea/
