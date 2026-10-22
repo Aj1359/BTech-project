@@ -56,6 +56,30 @@ def assign_communities(G, seed=42):
     nx.set_node_attributes(G, partition, 'group')
     return partition
 
+def assign_binary_groups(G, M_seeds, sp0, vuln_nodes, split_quantile=0.5):
+    """
+    Partitions the network into two semantic groups:
+      - Group 0 (Protected): The worst-off vulnerable nodes needing truth protection (sp0 <= quantile threshold)
+      - Group 1 (Unprotected): Less vulnerable nodes and unthreatened / M nodes
+    """
+    sp0_vuln = [float(sp0[v]) for v in vuln_nodes]
+    if sp0_vuln:
+        threshold = float(np.quantile(sp0_vuln, split_quantile))
+    else:
+        threshold = 0.5
+
+    partition = {}
+    for node in G.nodes():
+        if node in M_seeds:
+            partition[node] = 1  # Unprotected / Misinformation source
+        elif node in vuln_nodes and sp0[node] <= threshold:
+            partition[node] = 0  # Protected (worst-off vulnerable)
+        else:
+            partition[node] = 1  # Unprotected (less vulnerable or safe)
+
+    nx.set_node_attributes(G, partition, 'group')
+    return partition
+
 # ==========================================
 # Plotting Helpers
 # ==========================================
@@ -167,12 +191,14 @@ def run_experiment_pipeline(
     budgets=[5, 10, 15, 20, 25],
     m_size=10,
     m_modes=["highdeg"],
-    target_networks=None
+    target_networks=None,
+    group_mode="binary",
+    split_quantile=0.5
 ):
     print("====================================================================")
     print("   Fair Truth-Spreader Placement Benchmark - Complete Runner       ")
     print(f"   Monte Carlo Runs: {R_sim} | Budgets k: {budgets} | M Size: {m_size}")
-    print(f"   M Placement Modes: {m_modes}")
+    print(f"   M Placement Modes: {m_modes} | Group Mode: {group_mode}")
     print("====================================================================")
 
     os.makedirs(results_dir, exist_ok=True)
@@ -181,11 +207,11 @@ def run_experiment_pipeline(
 
     # Datasets with calibrated/thesis propagation probabilities
     datasets = [
-        {"name": "Facebook", "file": "networks/facebook_combined.txt", "alpha": 0.20, "run_mcicm": True},
-        {"name": "Arenas_email", "file": "networks/email-Eu-core.txt", "alpha": 0.30, "run_mcicm": True},
-        {"name": "CA-GrQc", "file": "networks/ca-GrQc.txt", "alpha": 0.15, "run_mcicm": False},
-        {"name": "CA-HepTh", "file": "networks/ca-HepTh.txt", "alpha": 0.15, "run_mcicm": False},
-        {"name": "CA-AstroPh", "file": "networks/ca-AstroPh.txt", "alpha": 0.25, "run_mcicm": False}
+        {"name": "Facebook", "file": "networks/facebook_combined.txt", "alpha": 0.20, "run_mcicm": True, "directed": False},
+        {"name": "Arenas_email", "file": "networks/email-Eu-core.txt", "alpha": 0.30, "run_mcicm": True, "directed": False},
+        {"name": "CA-GrQc", "file": "networks/ca-GrQc.txt", "alpha": 0.15, "run_mcicm": False, "directed": False},
+        {"name": "CA-HepTh", "file": "networks/ca-HepTh.txt", "alpha": 0.15, "run_mcicm": False, "directed": False},
+        {"name": "CA-AstroPh", "file": "networks/ca-AstroPh.txt", "alpha": 0.25, "run_mcicm": False, "directed": False}
     ]
 
     if target_networks:
@@ -209,9 +235,11 @@ def run_experiment_pipeline(
                 print(f"[Warning] Edge file not found: {edge_file}, skipping {net_name}...")
                 continue
 
-            print(f"\n>>> [{model_family}] Loading Network: {net_name} ({edge_file})")
-            G = load_and_extract_lcc(edge_file)
-            print(f"    Extracted LCC: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+            is_dir = ds.get("directed", False)
+            print(f"\n>>> [{model_family}] Loading Network: {net_name} ({edge_file}) | Directed: {is_dir}")
+            G = load_and_extract_lcc(edge_file, is_directed=is_dir)
+            comp_type = "LSCC" if is_dir else "LCC"
+            print(f"    Extracted {comp_type}: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
 
             csr_graph = GraphCSR(G)
             groups = assign_communities(G, seed=42)
@@ -270,10 +298,22 @@ def run_experiment_pipeline(
                 print(f"          Nodes with SP=0: {baseline_zeros} | Nodes with SP<0.001 (inf>99.9%): {baseline_near_one}")
                 print(f"          Tail SP: p01 = {sp0_p01:.4f} | p05 = {sp0_p05:.4f}")
 
+                # Configure groups for algorithms (Binary Protected vs Unprotected or Louvain)
+                if group_mode == "binary":
+                    groups = assign_binary_groups(G, M_seeds, sp0, vuln_nodes, split_quantile=split_quantile)
+                    unique_groups = [0, 1]
+                    n_prot = sum(1 for g in groups.values() if g == 0)
+                    n_unprot = sum(1 for g in groups.values() if g == 1)
+                    print(f"          Grouping: Binary (Protected [Group 0]={n_prot}, Unprotected [Group 1]={n_unprot})")
+                else:
+                    unique_groups = sorted(list(set(groups.values())))
+                    print(f"          Grouping: Community ({len(unique_groups)} Louvain communities)")
+
                 # Save M.json for baseline & aggregator
                 m_info = {
                     "M": [int(x) for x in M_seeds],
                     "m_mode": m_mode,
+                    "group_mode": group_mode,
                     "baseline": {
                         "outreach_empty": baseline_outreach,
                         "n_vulnerable": len(vuln_nodes),
@@ -426,6 +466,10 @@ if __name__ == "__main__":
     parser.add_argument("--R_sim", type=int, default=1000, help="Monte Carlo simulation runs (default: 1000)")
     parser.add_argument("--budgets", nargs="+", type=int, default=[5, 10, 15, 20, 25], help="Truth budgets k")
     parser.add_argument("--networks", nargs="+", default=None, help="Target network names (e.g. Facebook)")
+    parser.add_argument("--group_mode", default="binary", choices=["binary", "community"],
+                        help="Grouping method for FSPR/LFPR and group fairness: 'binary' (Protected vs Unprotected) or 'community' (Louvain)")
+    parser.add_argument("--split_quantile", type=float, default=0.5,
+                        help="Quantile of sp0 distribution defining Protected vs Unprotected in binary mode (default: 0.5)")
     args = parser.parse_args()
 
     active_modes = args.m_modes
@@ -436,5 +480,7 @@ if __name__ == "__main__":
         m_modes=active_modes,
         R_sim=args.R_sim,
         budgets=args.budgets,
-        target_networks=args.networks
+        target_networks=args.networks,
+        group_mode=args.group_mode,
+        split_quantile=args.split_quantile
     )
