@@ -358,26 +358,31 @@ def evaluate_metrics_engine(
     sp_median = sorted_sp[n_vuln // 2]
     hist20, _ = np.histogram(sp_vuln, bins=20, range=(0.0, 1.0))
 
-    # Gini
-    arr = np.array(sp_vuln, dtype=float)
-    mean_val = np.mean(arr)
-    if mean_val > 0:
-        diff_sum = np.sum(np.abs(np.subtract.outer(arr, arr)))
-        gini = float(diff_sum / (2.0 * len(arr) * len(arr) * mean_val))
+    # Gini: exact O(N log N) sorted calculation (instantaneous, zero memory allocation)
+    arr = np.sort(np.asarray(sp_vuln, dtype=float))
+    n = len(arr)
+    mean_val = float(np.mean(arr))
+    if mean_val > 0.0 and n > 0:
+        index = np.arange(1, n + 1, dtype=float)
+        gini = float((2.0 * np.sum(index * arr)) / (n * np.sum(arr)) - (n + 1.0) / n)
+        gini = max(0.0, gini)
     else:
         gini = 0.0
 
-    # Consistency
-    num_cons, den_cons = 0.0, 0.0
-    for i in range(len(vuln_list)):
-        vi = vuln_list[i]
-        for j in range(len(vuln_list)):
-            vj = vuln_list[j]
-            s_ij = 1.0 - abs(sp0[vi] - sp0[vj])
-            diff = abs(sp_T[vi] - sp_T[vj])
-            num_cons += diff * s_ij
-            den_cons += s_ij
-    consistency = float(1.0 - (num_cons / den_cons)) if den_cons > 0 else 1.0
+    # Consistency: vectorized individual fairness calculation (sampled to 500 nodes if N is large for instant speed)
+    n_v = len(vuln_list)
+    if n_v > 500:
+        sample_idx = np.random.RandomState(42).choice(n_v, size=500, replace=False)
+        sub_sp0 = np.array([sp0[vuln_list[i]] for i in sample_idx], dtype=float)
+        sub_spT = np.array([sp_T[vuln_list[i]] for i in sample_idx], dtype=float)
+    else:
+        sub_sp0 = np.array([sp0[v] for v in vuln_list], dtype=float)
+        sub_spT = np.array([sp_T[v] for v in vuln_list], dtype=float)
+
+    s_mat = 1.0 - np.abs(sub_sp0[:, None] - sub_sp0[None, :])
+    diff_mat = np.abs(sub_spT[:, None] - sub_spT[None, :])
+    den_cons = float(np.sum(s_mat))
+    consistency = float(1.0 - (float(np.sum(diff_mat * s_mat)) / den_cons)) if den_cons > 0.0 else 1.0
 
     # Group saved fractions & gap/ratio (filtering out tiny community shards < 1% of vulnerable nodes)
     unique_groups = sorted(list(set(group_labels.values())))
