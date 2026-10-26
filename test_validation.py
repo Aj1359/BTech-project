@@ -187,7 +187,30 @@ class TestValidationSuite(unittest.TestCase):
             # Seeds must not overlap with M
             self.assertTrue(all(s not in M for s in seeds_3))
             # Prefix reusability check
+    def test_12_nsj_lfpr_and_spreadability_variants(self):
+        """Test 12: Validate NSJ-LFPR and spreadability variants execution and prefix reusability."""
+        M = {0}
+        sp0 = estimate_sp_engine(self.csr_path, M, set(), "COICM", pM=0.3, pT=0.3, R_runs=200, base_seed=42)
+        vuln = set(v for v in range(8) if v not in M and sp0[v] < 1.0)
+
+        new_algos = ['nsj_lfpr', 'sj_fspr', 'sj_lfpr', 'pr_target', 'pr_spread', 'pr_dist']
+        for algo_name in new_algos:
+            seeds_3 = self.algo_mgr.run_algo(
+                algo_name, self.G_path, M, 3, {'pM': 0.3, 'pT': 0.3, 'model': 'COICM'},
+                vulnerable_set=vuln, estimate_sp=estimate_sp_engine, csr=self.csr_path,
+                R_cand=30, L=5
+            )
+            seeds_2 = self.algo_mgr.run_algo(
+                algo_name, self.G_path, M, 2, {'pM': 0.3, 'pT': 0.3, 'model': 'COICM'},
+                vulnerable_set=vuln, estimate_sp=estimate_sp_engine, csr=self.csr_path,
+                R_cand=30, L=5
+            )
+
+            self.assertIsInstance(seeds_3, list)
+            self.assertEqual(len(seeds_3), 3)
+            self.assertTrue(all(s not in M for s in seeds_3))
             self.assertEqual(seeds_3[:2], seeds_2, f"Prefix mismatch in {algo_name}!")
 
 if __name__ == '__main__':
     unittest.main()
+

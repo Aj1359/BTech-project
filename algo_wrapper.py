@@ -30,7 +30,13 @@ ALGO_FILES = {
     'orf_lfpr': 'orf_lfpr.py',
     'ftrw': 'ftrw.py',
     'ftrw_v2': 'ftrw_v2.py',
-    'ftrw_v3': 'ftrw_v3.py'
+    'ftrw_v3': 'ftrw_v3.py',
+    'nsj_lfpr': 'nsj_lfpr.py',
+    'sj_fspr': 'sj_fspr.py',
+    'sj_lfpr': 'sj_lfpr.py',
+    'pr_target': 'pr_target.py',
+    'pr_spread': 'pr_spread.py',
+    'pr_dist': 'pr_dist.py'
 }
 
 # Algorithms whose seed selection is completely model-agnostic (independent of pM, pT)
@@ -48,7 +54,8 @@ PREFIX_REUSABLE_ALGOS = {
     'topdegree', 'betweenness', 'leastcentral', 'naive_protect',
     'habc_vuln', 'random', 'proposed', 'fwrrs',
     'group_maximin_greedy', 'dp_aware_fibm', 'mindegree_hcn', 'myopic_bfs',
-    'ftrw', 'ftrw_v2', 'ftrw_v3'
+    'ftrw', 'ftrw_v2', 'ftrw_v3',
+    'nsj_lfpr', 'sj_fspr', 'sj_lfpr', 'pr_target', 'pr_spread', 'pr_dist'
 }
 
 class AlgoManager:
