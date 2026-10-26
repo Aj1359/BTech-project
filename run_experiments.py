@@ -13,6 +13,7 @@ from sim_engine import (
 )
 from algo_wrapper import AlgoManager, MODEL_AGNOSTIC_ALGOS, PREFIX_REUSABLE_ALGOS
 from placem import place_m
+from analyze_results import print_summary_table
 
 # ==========================================
 # Graph Processing (LCC/SCC)
@@ -452,6 +453,9 @@ def run_experiment_pipeline(
                     json.dump(summary_info, f, indent=2)
 
                 print(f"       [Complete] Summary and line graphs generated in {prob_dir}")
+
+                # Immediate analysis table for this network run
+                print_summary_table(summary_info)
 
     print("\n====================================================================")
     print("   All Experiments Completed Successfully! Results in results/     ")
