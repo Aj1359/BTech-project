@@ -17,7 +17,7 @@ def download_and_extract(url, target_path):
     print(f"Finished {target_path}")
 
 def main():
-    networks_dir = r"e:\btp\networks"
+    networks_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "networks")
     os.makedirs(networks_dir, exist_ok=True)
     
     datasets = {

@@ -1,0 +1,13 @@
+# Core
+numpy>=1.21
+scipy>=1.7
+networkx>=2.8
+matplotlib>=3.5
+python-louvain>=0.16   # imported as `community` (Louvain community detection)
+
+# Optional but strongly recommended: JIT-compiles the Monte Carlo engine (10-100x faster)
+numba>=0.56
+
+# Only needed by legacy/runner.py and legacy/aggregator.py
+pyyaml>=6.0
+pandas>=1.3

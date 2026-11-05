@@ -1,3 +1,8 @@
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _ROOT not in _sys.path:
+    _sys.path.insert(0, _ROOT)
+
 import os
 import json
 import random
@@ -7,9 +12,9 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from simulators import estimate_sp, simulate_cascade
-from placem import place_m
-from metrics import compute_all_metrics
+from fairspread.simulators import estimate_sp, simulate_cascade
+from fairspread.placem import place_m
+from fairspread.metrics import compute_all_metrics
 
 def load_algorithms(algos_dir='algos'):
     algorithms = {}
@@ -69,7 +74,7 @@ def run_experiment_v1():
     print("Starting Experiment V1 Execution Suite")
     print("==================================================")
     
-    base_dir = os.path.dirname(__file__)
+    base_dir = _ROOT
     algos_dir = os.path.join(base_dir, 'algos')
     algorithms = load_algorithms(algos_dir)
     print(f"Loaded {len(algorithms)} algorithms: {list(algorithms.keys())}")

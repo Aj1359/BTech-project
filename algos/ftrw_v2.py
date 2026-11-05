@@ -160,7 +160,7 @@ def get_seeds(G, M, budget, **kw):
     n     = len(nodes)
 
     try:
-        from sim_engine import GraphCSR
+        from fairspread.sim_engine import GraphCSR
         graph_for_sim = kw.get('csr') or GraphCSR(G)
     except Exception:
         graph_for_sim = G
