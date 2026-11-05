@@ -1,3 +1,8 @@
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _ROOT not in _sys.path:
+    _sys.path.insert(0, _ROOT)
+
 import os
 import time
 import json
@@ -8,12 +13,12 @@ import numpy as np
 import networkx as nx
 from collections import defaultdict
 
-from sim_engine import (
+from fairspread.sim_engine import (
     GraphCSR, compute_distances_bfs,
     estimate_sp_engine, evaluate_metrics_engine
 )
-from algo_wrapper import AlgoManager, MODEL_AGNOSTIC_ALGOS, PREFIX_REUSABLE_ALGOS
-from placem import place_m
+from fairspread.algo_wrapper import AlgoManager, MODEL_AGNOSTIC_ALGOS, PREFIX_REUSABLE_ALGOS
+from fairspread.placem import place_m
 
 def load_network_and_preprocess(edge_file, is_directed=False):
     create_using = nx.DiGraph() if is_directed else nx.Graph()
@@ -78,7 +83,7 @@ def calibrate_alpha(G, csr_graph, M_highdeg, R=1000):
             return p
     return 0.30  # default fallback
 
-def run_benchmark(config_path="config.yaml"):
+def run_benchmark(config_path=_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "config.yaml")):
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
 

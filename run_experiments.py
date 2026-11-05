@@ -7,13 +7,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-from sim_engine import (
+from fairspread.sim_engine import (
     GraphCSR, compute_distances_bfs,
     estimate_sp_engine, evaluate_metrics_engine
 )
-from algo_wrapper import AlgoManager, MODEL_AGNOSTIC_ALGOS, PREFIX_REUSABLE_ALGOS
-from placem import place_m
+from fairspread.algo_wrapper import AlgoManager, MODEL_AGNOSTIC_ALGOS, PREFIX_REUSABLE_ALGOS
+from fairspread.placem import place_m
 from analyze_results import print_summary_table
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ==========================================
 # Graph Processing (LCC/SCC)
@@ -208,11 +210,11 @@ def run_experiment_pipeline(
 
     # Datasets with calibrated/thesis propagation probabilities
     datasets = [
-        {"name": "Facebook", "file": "networks/facebook_combined.txt", "alpha": 0.20, "run_mcicm": True, "directed": False},
-        {"name": "Arenas_email", "file": "networks/email-Eu-core.txt", "alpha": 0.30, "run_mcicm": True, "directed": False},
-        {"name": "CA-GrQc", "file": "networks/ca-GrQc.txt", "alpha": 0.15, "run_mcicm": False, "directed": False},
-        {"name": "CA-HepTh", "file": "networks/ca-HepTh.txt", "alpha": 0.15, "run_mcicm": False, "directed": False},
-        {"name": "CA-AstroPh", "file": "networks/ca-AstroPh.txt", "alpha": 0.25, "run_mcicm": False, "directed": False}
+        {"name": "Facebook", "file": os.path.join(ROOT, "networks", "facebook_combined.txt"), "alpha": 0.20, "run_mcicm": True, "directed": False},
+        {"name": "Arenas_email", "file": os.path.join(ROOT, "networks", "email-Eu-core.txt"), "alpha": 0.30, "run_mcicm": True, "directed": False},
+        {"name": "CA-GrQc", "file": os.path.join(ROOT, "networks", "ca-GrQc.txt"), "alpha": 0.15, "run_mcicm": False, "directed": False},
+        {"name": "CA-HepTh", "file": os.path.join(ROOT, "networks", "ca-HepTh.txt"), "alpha": 0.15, "run_mcicm": False, "directed": False},
+        {"name": "CA-AstroPh", "file": os.path.join(ROOT, "networks", "ca-AstroPh.txt"), "alpha": 0.25, "run_mcicm": False, "directed": False}
     ]
 
     if target_networks:

@@ -1,3 +1,8 @@
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _ROOT not in _sys.path:
+    _sys.path.insert(0, _ROOT)
+
 import networkx as nx
 import numpy as np
 import random
@@ -163,16 +168,16 @@ def load_real_network(filepath):
 
 def run_experiment():
     print("Loading algorithms...")
-    algos_dir = os.path.join(os.path.dirname(__file__), 'algos')
+    algos_dir = os.path.join(_ROOT, 'algos')
     algorithms = load_algorithms(algos_dir)
     print(f"Loaded algorithms: {list(algorithms.keys())}")
     
-    results_dir = os.path.join(os.path.dirname(__file__), 'results')
+    results_dir = os.path.join(_ROOT, 'results')
     
     networks_to_test = {}
     
     # Load real networks
-    nets_dir = os.path.join(os.path.dirname(__file__), 'networks')
+    nets_dir = os.path.join(_ROOT, 'networks')
     if os.path.exists(nets_dir):
         for file in os.listdir(nets_dir):
             if file.endswith('.txt'):

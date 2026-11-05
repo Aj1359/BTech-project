@@ -3,7 +3,7 @@ import json
 import yaml
 import pandas as pd
 
-def build_master_json(results_dir="results", config_path="config.yaml"):
+def build_master_json(results_dir="results", config_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")):
     print("Building master.json from leaf JSONs...")
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)

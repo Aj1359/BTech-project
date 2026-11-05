@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
 from scipy.stats import spearmanr, pearsonr
-from simulators import simulate_cascade
+from .simulators import simulate_cascade
 
 def compute_gini(sp_values):
     n = len(sp_values)

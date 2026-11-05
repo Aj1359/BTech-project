@@ -1,9 +1,27 @@
+# Python
 __pycache__/
-*.pyc
-algos/__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Experiment outputs (regenerate with run_experiments.py)
 results/
 results_v1/
 results_v3/
+
+# Downloads / archives
 *.zip
+*.gz
+
+# C++ build artefacts
+cpp_core/build/
+build/
+*.so
+*.pyd
+
+# Editor / OS
 .vscode/
 .idea/
+.DS_Store
