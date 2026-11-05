@@ -3,6 +3,9 @@ import os
 import random
 import networkx as nx
 
+# algos/ lives at the repository root, next to this package
+DEFAULT_ALGOS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'algos')
+
 ALGO_FILES = {
     'random': 'random_baseline.py',
     'topdegree': 'top_degree.py',
@@ -59,7 +62,7 @@ PREFIX_REUSABLE_ALGOS = {
 }
 
 class AlgoManager:
-    def __init__(self, algos_dir='algos'):
+    def __init__(self, algos_dir=DEFAULT_ALGOS_DIR):
         self.algos_dir = algos_dir
         self.loaded_funcs = {}
         self._load_all()

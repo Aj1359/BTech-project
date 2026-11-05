@@ -1,3 +1,8 @@
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _ROOT not in _sys.path:
+    _sys.path.insert(0, _ROOT)
+
 import os
 import json
 import math
@@ -9,9 +14,9 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from scipy.stats import spearmanr, pearsonr
 
-from simulators import estimate_sp, simulate_cascade
-from placem import place_m
-from metrics import compute_all_metrics, inequality_aversion_welfare, demographic_parity_gap
+from fairspread.simulators import estimate_sp, simulate_cascade
+from fairspread.placem import place_m
+from fairspread.metrics import compute_all_metrics, inequality_aversion_welfare, demographic_parity_gap
 
 # ==========================================
 # Dynamic Algorithm Loader
@@ -164,7 +169,7 @@ def run_experiment_v3():
     print("Starting Experiment V3 Execution Suite")
     print("==================================================")
     
-    base_dir = os.path.dirname(__file__)
+    base_dir = _ROOT
     algos_dir = os.path.join(base_dir, 'algos')
     algorithms = load_algorithms(algos_dir)
     print(f"Loaded {len(algorithms)} algorithms: {list(algorithms.keys())}")

@@ -2,7 +2,7 @@ import random
 import math
 import numpy as np
 import networkx as nx
-from simulators import estimate_sp
+from .simulators import estimate_sp
 
 def place_m(G, m=None, mode="highdeg", seed=42):
     """

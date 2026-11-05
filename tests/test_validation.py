@@ -1,11 +1,16 @@
+import os as _os, sys as _sys
+_ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+if _ROOT not in _sys.path:
+    _sys.path.insert(0, _ROOT)
+
 import unittest
 import math
 import numpy as np
 import networkx as nx
 from scipy.stats import pearsonr
 
-from sim_engine import GraphCSR, compute_distances_bfs, estimate_sp_engine, evaluate_metrics_engine
-from algo_wrapper import AlgoManager
+from fairspread.sim_engine import GraphCSR, compute_distances_bfs, estimate_sp_engine, evaluate_metrics_engine
+from fairspread.algo_wrapper import AlgoManager
 from algos.pagerank import get_seeds as pagerank_seeds
 from algos.fspr import compute_fspr_scores
 from algos.mf_fspr import compute_mf_fspr_scores
